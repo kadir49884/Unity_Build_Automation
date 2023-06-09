@@ -38,8 +38,26 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          export FILE_PATH=$(find ${{ github.workspace }}/build/${{ matrix.targetPlatform }} -name "*.apk")
-          export CHANNEL="#github-helper"
-          export FILE_NAME="Build-Android.apk"
-          
-          curl -F file=@$FILE_PATH -F channels=$CHANNEL -F filename=$FILE_NAME -H "Authorization: Bearer $SLACK_WEBHOOK" https://slack.com/api/files.upload
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "channel": "C05BHP2B7BQ",
+            "text": "Build artifacts for ${{ matrix.targetPlatform }} are available",
+            "attachments": [
+              {
+                "fallback": "Build details",
+                "color": "#36a64f",
+                "fields": [
+                  {
+                    "title": "Commit",
+                    "value": "'${{ github.sha }}'",
+                    "short": true
+                  },
+                  {
+                    "title": "Author",
+                    "value": "'${{ github.actor }}'",
+                    "short": true
+                  }
+                ]
+              }
+            ],
+            "file": "@build/${{ matrix.targetPlatform }}/artifact.zip"
+          }' $SLACK_WEBHOOK
