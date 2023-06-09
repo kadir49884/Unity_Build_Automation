@@ -1,35 +1,62 @@
-name: Build project
+name: Build and Send Artifacts
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-    buildForAllSupportedPlatforms:
-        name: Build for ${{ matrix.targetPlatform }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                targetPlatform:
-                
-                     - Android # Build an Android .apk standalone app. 
-                     
-                     
-        steps:
-            - uses: actions/checkout@v2
-              with:
-                  fetch-depth: 0
-                  lfs: true
-            - uses: actions/cache@v2
-              with:
-                  path: Library
-                  key: Library-${{ matrix.targetPlatform }}
-                  restore-keys: Library-
-            - uses: game-ci/unity-builder@v2
-              env:
-                  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-              with:
-                  targetPlatform: ${{ matrix.targetPlatform }}
-            - uses: actions/upload-artifact@v2
-              with:
-                  name: Build-${{ matrix.targetPlatform }}
-                  path: build/${{ matrix.targetPlatform }}
+  buildForAllSupportedPlatforms:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - Android # Build an Android .apk standalone app.
+  
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/cache@v2
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}
+          restore-keys: Library-
+      - uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: ${{ matrix.targetPlatform }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Build-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+      - name: Send Artifacts to Slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "channel": "C05BHP2B7BQ",
+            "text": "Build artifacts for ${{ matrix.targetPlatform }} are available",
+            "attachments": [
+              {
+                "fallback": "Build details",
+                "color": "#36a64f",
+                "fields": [
+                  {
+                    "title": "Commit",
+                    "value": "'${{ github.sha }}'",
+                    "short": true
+                  },
+                  {
+                    "title": "Author",
+                    "value": "'${{ github.actor }}'",
+                    "short": true
+                  }
+                ]
+              }
+            ]
+          }' $SLACK_WEBHOOK
