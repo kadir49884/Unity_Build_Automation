@@ -38,7 +38,8 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          export FILE_PATH=$(find ${{ github.workspace }} -name "artifact.zip")
-          export CHANNEL="#github-helper" # Slack kanalınızın adını buraya yazın
+          export FILE_PATH=$(find ${{ github.workspace }}/build/${{ matrix.targetPlatform }} -name "*.apk")
+          export CHANNEL="#github-helper"
+          export FILE_NAME="Build-Android.apk"
           
-          curl -F file=@$FILE_PATH -F channels=$CHANNEL -H "Content-type: application/zip" -H "Authorization: Bearer $SLACK_WEBHOOK" https://slack.com/api/files.upload
+          curl -F file=@$FILE_PATH -F channels=$CHANNEL -F filename=$FILE_NAME -H "Authorization: Bearer $SLACK_WEBHOOK" https://slack.com/api/files.upload
