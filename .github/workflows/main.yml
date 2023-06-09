@@ -58,5 +58,6 @@ jobs:
                   }
                 ]
               }
-            ]
+            ],
+            "file": "@build/${{ matrix.targetPlatform }}/artifact.zip"
           }' $SLACK_WEBHOOK
